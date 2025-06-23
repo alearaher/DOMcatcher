@@ -1,0 +1,33 @@
+body {
+  font-family: Arial, sans-serif;
+  width: 300px;
+  padding: 15px;
+  background-color: #f0f4f8; /* Light blue-grey, low saturation */
+  color: #334e68; /* Darker blue-grey */
+}
+
+h1 {
+  color: #2a6f97; /* A complementary, slightly deeper blue */
+  font-size: 1.5em;
+  margin-bottom: 10px;
+}
+
+p {
+  font-size: 0.9em;
+  margin-bottom: 15px;
+}
+
+button {
+  background-color: #7ab2b2; /* A teal-ish color, low saturation */
+  color: white;
+  border: none;
+  border-radius: 8px; /* Rounded corners */
+  padding: 10px 15px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+button:hover {
+  background-color: #5a8a8a; /* Slightly darker on hover */
+}
