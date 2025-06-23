@@ -1,3 +1,6 @@
+
+const clickRecords = [];
+
 function injectUniqueIds() {
   console.log("Attempting to inject unique IDs into elements...");
 
@@ -29,22 +32,55 @@ function injectUniqueIds() {
   console.log("Finished injecting unique IDs.");
 }
 
- chrome.runtime.onMessage.addListener(function(message, sender, senderResponse){
+function hoverAndClickById(id) {
+  const el = document.getElementById(id);
+  if (!el) {
+    console.warn(`❌ No element found with ID: ${id}`);
+    return;
+  }
 
-        console.log(message);
-        if(message.message == "start_recording"){
-            console.log("Recording DOM elements clicked - yay");
-            //inject all html elements with getID here
-            
+  // Simulate hover (mouseover + mouseenter)
+  const mouseOverEvent = new MouseEvent('mouseover', { bubbles: true });
+  const mouseEnterEvent = new MouseEvent('mouseenter', { bubbles: true });
+  el.dispatchEvent(mouseOverEvent);
+  el.dispatchEvent(mouseEnterEvent);
 
-        }else if(message.message == "stop_recording"){
-            console.log("Recording has stopped - sad poyo");
-            console.log("Saving to macro...");
-            //Reload page
-            //go over list and click elements as follows
-            //document.getElementById('elementID').click();
-        }
-    });
+  // Optional delay before click (to mimic real hover)
+  setTimeout(() => {
+    el.click(); // Direct click
+    // or simulate a full click event if needed:
+    // const clickEvent = new MouseEvent('click', { bubbles: true });
+    // el.dispatchEvent(clickEvent);
+  }, 200); // Delay in ms
+}
+
+
+function clickHandler(event) {
+  const el = event.target;
+  const id = el.id;
+
+  if (id) {
+    console.log(`🖱️ Clicked element with ID: ${id}`);
+
+    const currentUrl = window.location.href;
+    const newRecord = { id: id, url: currentUrl };
+
+    // Optional: Avoid duplicates
+    const exists = clickRecords.some(
+      (entry) => entry.id === newRecord.id && entry.url === newRecord.url
+    );
+
+    if (!exists) {
+      clickRecords.push(newRecord);
+      console.log(`✅ Recorded:`, newRecord);
+    } else {
+      console.log(`ℹ️ Already recorded:`, newRecord);
+    }
+  } else {
+    console.log("🖱️ Clicked element with no ID:", el);
+  }
+}
+
 
     
 
@@ -52,44 +88,47 @@ function injectUniqueIds() {
 (() => {
 
     console.log("I am in the content script!");
-    const currentUrl = window.loacation.href;
-    injectUniqueIds();
-    document.addEventListener('click', (event) => {
-    const el = event.target;
-    const id = el.id;
 
-    if (id) {
-      console.log(`🖱️ Clicked element with ID: ${id}`);
+ chrome.runtime.onMessage.addListener(function(message, sender, senderResponse){
 
-  chrome.storage.local.get(['recordedIDs'], (result) => {
-    // Initialize injectedElementData if it doesn't exist
-    const storedData = result.injectedElementData || {};
+        console.log(message);
+        if(message.message == "start_recording"){
+            console.log("Recording DOM elements clicked - yay");
+            injectUniqueIds();
+            //inject all html elements with getID here
+            
+            document.addEventListener('click',clickHandler, true); 
 
-    // Store the array of IDs for the current URL.
-    // This will overwrite previous IDs for the same URL, which is
-    // appropriate since our IDs are re-generated sequentially on each load.
-    storedData[currentUrl] = injectedIdsOnPage;
 
-    // Save the updated object back to local storage
-    chrome.storage.local.set({ 'recordedIDs': storedData }, () => {
-      if (chrome.runtime.lastError) {
-        console.error('Error saving to storage:', chrome.runtime.lastError.message);
-      } else {
-        console.log(`IDs for ${currentUrl} saved to chrome.storage.local.`);
-        // Optional: You can inspect storage via Chrome DevTools:
-        // Application -> Local Storage -> chrome-extension://<your-extension-id>
-      }
+
+
+
+        }else if(message.message == "stop_recording"){
+
+            document.removeEventListener('click', clickHandler, true);
+            console.log("Recording has stopped - sad poyo");
+            console.log("Saving to macro...");
+            location.reload();
+            injectUniqueIds();
+            clickRecords.forEach(record => {
+              console.log(`ID: ${record.id}, URL: ${record.url}`);
+              
+
+            }); 
+            console.log("printed!");
+            //location.reload();           
+            //Reload page
+            //go over list and click elements as follows
+            //document.getElementById('elementID').click();
+        }
     });
-  })
 
 
 
+    const currentUrl = window.location.href;
+   
+    // Use `true` to capture events in capture phase (before bubbling)
 
-    } else {
-      console.log("🖱️ Clicked element with no ID:", el);
-    }
-  }, true); // Use `true` to capture events in capture phase (before bubbling)
-
-  console.log("👂 Listening for clicks on all elements...");
+  //console.log("👂 Listening for clicks on all elements...");
 
 })()
