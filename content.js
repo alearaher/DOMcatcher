@@ -1,58 +1,44 @@
-// This script runs on the webpage the user is currently viewing.
-function injectOnClickHandlers() {
-  console.log("Attempting to inject onClick handlers...");
+function injectUniqueIds() {
+  console.log("Attempting to inject unique IDs into elements...");
 
-  // Select all <a> (anchor/link) elements
-  const links = document.querySelectorAll('a');
+  let buttonCounter = 1; // Counter for unique button IDs
+  let linkCounter = 1;   // Counter for unique link IDs
+
   // Select all <button> elements
   const buttons = document.querySelectorAll('button');
-
-  // Combine the NodeLists into a single array for easier iteration
-  const elementsToModify = [...links, ...buttons];
-
-  elementsToModify.forEach(element => {
-    // Check if the element already has an onclick attribute
-    if (!element.hasAttribute('onclick')) {
-    
-      element.setAttribute('onclick', 'getId(this)');
-      console.log(`Injected onClick into: <${element.tagName}> with ID: ${element.id || 'No ID'}`);
-    } else {
-      console.log(`Element <${element.tagName}> with ID: ${element.id || 'No ID'} already has an onclick attribute, appending....`);
-      element.setAttribute('onclick', element.getAttribute('onclick') + '; getId(this);');
-     
+  buttons.forEach(button => {
+    // Check if the button already has an ID
+    if (!button.id) {
+      const newId = `ext-button-${buttonCounter++}`;
+      button.id = newId;
+      console.log(`Injected ID '${newId}' into a button.`);
     }
   });
 
-  console.log("Finished injecting onClick handlers.");
-}
+  // Select all <a> (anchor/link) elements
+  const links = document.querySelectorAll('a');
+  links.forEach(link => {
+    // Check if the link already has an ID
+    if (!link.id) {
+      const newId = `ext-link-${linkCounter++}`;
+      link.id = newId;
+      console.log(`Injected ID '${newId}' into a link.`);
+    }
+  });
 
-// Ensure the DOM is fully loaded before trying to modify elements.
-// This is crucial for content scripts to find all elements.
-//if (document.readyState === 'loading') {
-  // Loading hasn't finished yet
-//  document.addEventListener('DOMContentLoaded', injectOnClickHandlers);
-//} else {
-  // `DOMContentLoaded` has already fired
-//  injectOnClickHandlers();
-//}
-
-function getID(element){
-
-    console.log("ID captured!");
-    console.log(element.id);
-
+  console.log("Finished injecting unique IDs.");
 }
 
  chrome.runtime.onMessage.addListener(function(message, sender, senderResponse){
 
         console.log(message);
         if(message.message == "start_recording"){
-            console.log("Recording DOM elements clicked");
+            console.log("Recording DOM elements clicked - yay");
             //inject all html elements with getID here
-            //injectOnClickHandlers(); 
+            
 
         }else if(message.message == "stop_recording"){
-            console.log("Recording has stopped");
+            console.log("Recording has stopped - sad poyo");
             console.log("Saving to macro...");
             //Reload page
             //go over list and click elements as follows
@@ -66,12 +52,39 @@ function getID(element){
 (() => {
 
     console.log("I am in the content script!");
+    const currentUrl = window.loacation.href;
+    injectUniqueIds();
     document.addEventListener('click', (event) => {
     const el = event.target;
     const id = el.id;
 
     if (id) {
       console.log(`🖱️ Clicked element with ID: ${id}`);
+
+  chrome.storage.local.get(['recordedIDs'], (result) => {
+    // Initialize injectedElementData if it doesn't exist
+    const storedData = result.injectedElementData || {};
+
+    // Store the array of IDs for the current URL.
+    // This will overwrite previous IDs for the same URL, which is
+    // appropriate since our IDs are re-generated sequentially on each load.
+    storedData[currentUrl] = injectedIdsOnPage;
+
+    // Save the updated object back to local storage
+    chrome.storage.local.set({ 'recordedIDs': storedData }, () => {
+      if (chrome.runtime.lastError) {
+        console.error('Error saving to storage:', chrome.runtime.lastError.message);
+      } else {
+        console.log(`IDs for ${currentUrl} saved to chrome.storage.local.`);
+        // Optional: You can inspect storage via Chrome DevTools:
+        // Application -> Local Storage -> chrome-extension://<your-extension-id>
+      }
+    });
+  })
+
+
+
+
     } else {
       console.log("🖱️ Clicked element with no ID:", el);
     }

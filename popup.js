@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     chrome.storage.local.set({ 'popupClicked': true }, () => {
       console.log('Button click state saved to storage.');
       messageElement.textContent = "Button clicked and state saved!";
-      chrome.tabs.sendMessage(activeTab.id, {message: "start_record"});
+      chrome.tabs.sendMessage(activeTab.id, {message: "start_recording"});
     });
   });
 
@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     chrome.storage.local.set({ 'popupClicked': true }, () => {
       console.log('Button click state saved to storage.');
       messageElement.textContent = "Button clicked and state saved!";
-      chrome.tabs.sendMessage(activeTab.id, {message: "stop_record"});
+      chrome.tabs.sendMessage(activeTab.id, {message: "stop_recording"});
     });
   });
 
