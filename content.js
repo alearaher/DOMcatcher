@@ -96,25 +96,24 @@ function clickHandler(event) {
             console.log("Recording DOM elements clicked - yay");
             injectUniqueIds();
             document.addEventListener('click',clickHandler, true); 
-
+            chrome.runtime.sendMessage({ status: 'Recording in progress!' });
         }else if(message.message == "stop_recording"){
 
             document.removeEventListener('click', clickHandler, true);
-            console.log("Recording has stopped - sad poyo");
-            console.log("Saving to macro...");
+            chrome.runtime.sendMessage({ status: 'Saving to macro!' });
             chrome.storage.local.set({ clickRecords }, () => {
-                 console.log("💾 Click records saved. Reloading...");
+                 console.log("Click records saved. Reloading...");
                 location.reload();
         });
         } else if (message.message === "replay_macro") {
-          console.log("🔁 Replaying macro from chrome.storage...");
+          console.log("Replaying macro from chrome.storage...");
 
           chrome.storage.local.get('clickRecords', (result) => {
             const records = result.clickRecords || [];
 
             if (records.length === 0) {
               console.log("No click records found to replay.");
-              // TODO: send message to popup.js to notify that there are no macros currently saved
+             chrome.runtime.sendMessage({ status: 'No macro found to play!' });
               return;
             }
 
