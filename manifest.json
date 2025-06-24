@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "My Awesome Extension",
-  "version": "1.0",
+  "version": "1.1",
   "description": "A basic DOM grabbing extension",
   "permissions": [
     "tabs",
@@ -9,7 +9,7 @@
     "activeTab"
   ],
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "index.html",
     "default_icon": {
       "16": "assets/icon.png",
       "48": "assets/icon.png",
