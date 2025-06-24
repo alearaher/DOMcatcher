@@ -1,5 +1,5 @@
 
-const clickRecords = [];
+let clickRecords = [];
 
 function injectUniqueIds() {
   console.log("Attempting to inject unique IDs into elements...");
@@ -35,7 +35,7 @@ function injectUniqueIds() {
 function hoverAndClickById(id) {
   const el = document.getElementById(id);
   if (!el) {
-    console.warn(`❌ No element found with ID: ${id}`);
+    console.warn(`No element found with ID: ${id}`);
     return;
   }
 
@@ -44,13 +44,12 @@ function hoverAndClickById(id) {
   const mouseEnterEvent = new MouseEvent('mouseenter', { bubbles: true });
   el.dispatchEvent(mouseOverEvent);
   el.dispatchEvent(mouseEnterEvent);
+  el.focus();
 
   // Optional delay before click (to mimic real hover)
   setTimeout(() => {
     el.click(); // Direct click
-    // or simulate a full click event if needed:
-    // const clickEvent = new MouseEvent('click', { bubbles: true });
-    // el.dispatchEvent(clickEvent);
+
   }, 200); // Delay in ms
 }
 
@@ -63,7 +62,7 @@ function clickHandler(event) {
     console.log(`🖱️ Clicked element with ID: ${id}`);
 
     const currentUrl = window.location.href;
-    const newRecord = { id: id, url: currentUrl };
+    const newRecord = { id: id, url: currentUrl, type: "click" };
 
     // Optional: Avoid duplicates
     const exists = clickRecords.some(
@@ -72,6 +71,9 @@ function clickHandler(event) {
 
     if (!exists) {
       clickRecords.push(newRecord);
+      chrome.storage.local.set({ clickRecords }, () => {
+      console.log(`✅ Saved to chrome.storage:`, newRecord);
+      });
       console.log(`✅ Recorded:`, newRecord);
     } else {
       console.log(`ℹ️ Already recorded:`, newRecord);
@@ -81,34 +83,11 @@ function clickHandler(event) {
   }
 }
 
-function hoverAndClickById(id) {
-  const el = document.getElementById(id);
-  if (!el) {
-    console.warn(`❌ No element found with ID: ${id}`);
-    return;
-  }
+//TODO create a keyPressHandler(event)
 
-  // Simulate hover (mouseover + mouseenter)
-  const mouseOverEvent = new MouseEvent('mouseover', { bubbles: true });
-  const mouseEnterEvent = new MouseEvent('mouseenter', { bubbles: true });
-  el.dispatchEvent(mouseOverEvent);
-  el.dispatchEvent(mouseEnterEvent);
-
-  // Optional delay before click (to mimic real hover)
-  setTimeout(() => {
-    el.click(); // Direct click
-    // or simulate a full click event if needed:
-    // const clickEvent = new MouseEvent('click', { bubbles: true });
-    // el.dispatchEvent(clickEvent);
-  }, 200); // Delay in ms
-}
-
-    
-
-// This script runs on the webpage the user is currently viewing.
 (() => {
 
-    console.log("I am in the content script!");
+  console.log("Content script loaded!");
 
  chrome.runtime.onMessage.addListener(function(message, sender, senderResponse){
 
@@ -116,40 +95,51 @@ function hoverAndClickById(id) {
         if(message.message == "start_recording"){
             console.log("Recording DOM elements clicked - yay");
             injectUniqueIds();
-            //inject all html elements with getID here
-            
             document.addEventListener('click',clickHandler, true); 
-
-
-
-
 
         }else if(message.message == "stop_recording"){
 
             document.removeEventListener('click', clickHandler, true);
             console.log("Recording has stopped - sad poyo");
             console.log("Saving to macro...");
-            location.reload();
-            injectUniqueIds();
-            clickRecords.forEach(record => {
-              console.log(`ID: ${record.id}, URL: ${record.url}`);
-              hoverAndClickById(record.id);
+            chrome.storage.local.set({ clickRecords }, () => {
+                 console.log("💾 Click records saved. Reloading...");
+                location.reload();
+        });
+        } else if (message.message === "replay_macro") {
+          console.log("🔁 Replaying macro from chrome.storage...");
 
-            }); 
-            console.log("printed!");
-            //location.reload();           
-            //Reload page
-            //go over list and click elements as follows
-            //document.getElementById('elementID').click();
+          chrome.storage.local.get('clickRecords', (result) => {
+            const records = result.clickRecords || [];
+
+            if (records.length === 0) {
+              console.log("No click records found to replay.");
+              // TODO: send message to popup.js to notify that there are no macros currently saved
+              return;
+            }
+
+            injectUniqueIds(); // Ensure all elements have IDs again
+
+            let delay = 0;
+            records.forEach((record, index) => {
+              setTimeout(() => {
+                console.log(`🎯 Replaying click ${index + 1}: ${record.id} @ ${record.url}`);
+                hoverAndClickById(record.id);
+
+                // When last action finishes, clear storage
+                if (index === records.length - 1) {
+                  setTimeout(() => {
+                    chrome.storage.local.remove('clickRecords', () => {
+                      console.log("🗑️ Cleared clickRecords after replay.");
+                    });
+                  }, 500); // Small delay after last click
+                }
+              }, delay);
+              delay += 500;
+            });
+          });
         }
+
     });
-
-
-
-    const currentUrl = window.location.href;
-   
-    // Use `true` to capture events in capture phase (before bubbling)
-
-  //console.log("👂 Listening for clicks on all elements...");
 
 })()
