@@ -81,6 +81,27 @@ function clickHandler(event) {
   }
 }
 
+function hoverAndClickById(id) {
+  const el = document.getElementById(id);
+  if (!el) {
+    console.warn(`❌ No element found with ID: ${id}`);
+    return;
+  }
+
+  // Simulate hover (mouseover + mouseenter)
+  const mouseOverEvent = new MouseEvent('mouseover', { bubbles: true });
+  const mouseEnterEvent = new MouseEvent('mouseenter', { bubbles: true });
+  el.dispatchEvent(mouseOverEvent);
+  el.dispatchEvent(mouseEnterEvent);
+
+  // Optional delay before click (to mimic real hover)
+  setTimeout(() => {
+    el.click(); // Direct click
+    // or simulate a full click event if needed:
+    // const clickEvent = new MouseEvent('click', { bubbles: true });
+    // el.dispatchEvent(clickEvent);
+  }, 200); // Delay in ms
+}
 
     
 
@@ -112,7 +133,7 @@ function clickHandler(event) {
             injectUniqueIds();
             clickRecords.forEach(record => {
               console.log(`ID: ${record.id}, URL: ${record.url}`);
-              
+              hoverAndClickById(record.id);
 
             }); 
             console.log("printed!");
